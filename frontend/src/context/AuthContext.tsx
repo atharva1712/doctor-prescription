@@ -49,9 +49,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const verifyToken = useCallback(async () => {
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
     try {
       try {
-        const response = await axios.get(`${API_URL}/doctors/profile/me`, { timeout: 5000 });
+        const response = await axios.get(`${apiUrl}/doctors/profile/me`, { timeout: 5000 });
         setUser(response.data);
         setUserType('doctor');
         setLoading(false);
@@ -66,7 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       try {
-        const response = await axios.get(`${API_URL}/patients/profile/me`, { timeout: 5000 });
+        const response = await axios.get(`${apiUrl}/patients/profile/me`, { timeout: 5000 });
         setUser(response.data);
         setUserType('patient');
         setLoading(false);

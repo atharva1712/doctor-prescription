@@ -1,4 +1,4 @@
-import React, { useEffect, useState, ChangeEvent } from 'react';
+import React, { useEffect, useState, useCallback, ChangeEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Container,
@@ -66,13 +66,7 @@ const ConsultationForm: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (doctorId) {
-      fetchDoctor();
-    }
-  }, [doctorId]);
-
-  const fetchDoctor = async () => {
+  const fetchDoctor = useCallback(async () => {
     if (!doctorId) return;
     try {
       const response = await axios.get(`${API_URL}/doctors/${doctorId}`);
@@ -83,7 +77,13 @@ const ConsultationForm: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [doctorId]);
+
+  useEffect(() => {
+    if (doctorId) {
+      fetchDoctor();
+    }
+  }, [doctorId, fetchDoctor]);
 
   const handleNext = () => {
     if (activeStep === 0) {
