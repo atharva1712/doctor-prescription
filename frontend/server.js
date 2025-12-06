@@ -15,29 +15,33 @@ if (!fs.existsSync(BUILD_PATH)) {
 
 // Log build directory contents for debugging
 console.log('Build directory contents:', fs.readdirSync(BUILD_PATH));
+if (fs.existsSync(path.join(BUILD_PATH, 'static'))) {
+  console.log('Static directory exists');
+  if (fs.existsSync(path.join(BUILD_PATH, 'static', 'js'))) {
+    console.log('Static/js directory exists, files:', fs.readdirSync(path.join(BUILD_PATH, 'static', 'js')).slice(0, 5));
+  }
+}
 
 // Serve static files from the React app build directory
 // This will serve files from build/static/js, build/static/css, etc.
-// express.static automatically passes to next middleware if file not found
+// express.static will serve files if they exist, otherwise call next()
 app.use(express.static(BUILD_PATH, {
   maxAge: '1y',
-  etag: false,
-  index: false // Don't auto-serve index.html, let catch-all route handle it
+  etag: false
 }));
 
 // Handle React routing - return all non-API, non-static requests to React app
-// This catches all routes that don't match static files
+// This catches routes that don't match static files
 app.get('*', (req, res) => {
-  // Skip API routes (though they shouldn't reach here if backend is separate)
+  // Skip API routes
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
   
-  // Check if it's actually a static file that wasn't found
-  const filePath = path.join(BUILD_PATH, req.path);
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-    // This shouldn't happen, but just in case
-    return res.sendFile(filePath);
+  // If it's a request for a static file that wasn't served by express.static,
+  // it means the file doesn't exist - return 404
+  if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$/)) {
+    return res.status(404).send('File not found');
   }
   
   // For all other routes (React Router routes), serve index.html
