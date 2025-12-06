@@ -37,8 +37,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
   const logout = useCallback(() => {
     setUser(null);
     setUserType(null);
