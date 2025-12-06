@@ -108,8 +108,10 @@ uploads/*
 1. Railway will create a service automatically
 2. Click on the service
 3. Go to **"Settings"** tab
-4. Set **Root Directory** to `backend` (if your backend is in a subfolder)
-5. Set **Start Command** to `npm start`
+4. **IMPORTANT**: Set **Root Directory** to `backend` (if your backend is in a subfolder)
+5. Set **Build Command** to `npm install` (or leave empty, Railway will auto-detect)
+6. Set **Start Command** to `npm start`
+7. **Builder**: Make sure it's set to **"Nixpacks"** (not Railpack)
 
 ### 3.3 Set Environment Variables
 
@@ -236,9 +238,10 @@ app.use(cors()); // Allows all origins (for development)
 
 1. Click on the new service
 2. Go to **"Settings"** tab
-3. Set **Root Directory** to `frontend`
-4. Set **Build Command** to `npm install && npm run build`
-5. Set **Start Command** to `npx serve -s build -l $PORT`
+3. **IMPORTANT**: Set **Root Directory** to `frontend`
+4. **Builder**: Make sure it's set to **"Nixpacks"** (not Railpack)
+5. Set **Build Command** to `npm install --legacy-peer-deps && npm run build` (or leave empty to use nixpacks.toml)
+6. Set **Start Command** to `npx serve -s build -l $PORT`
 
 ### 5.3 Set Environment Variables
 
