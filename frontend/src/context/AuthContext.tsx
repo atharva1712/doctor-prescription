@@ -48,32 +48,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyToken = useCallback(async () => {
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    
+    // Increase timeout for mobile networks (15 seconds)
+    const timeout = 15000;
+    
     try {
+      // Try doctor profile first
       try {
-        const response = await axios.get(`${apiUrl}/doctors/profile/me`, { timeout: 5000 });
+        const response = await axios.get(`${apiUrl}/doctors/profile/me`, { timeout });
         setUser(response.data);
         setUserType('doctor');
         setLoading(false);
         return;
       } catch (err: any) {
-        if (err.code === 'ECONNREFUSED' || err.message?.includes('Network Error')) {
-          console.error('Backend server is not running or not accessible');
+        // If it's a network error, stop immediately
+        if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('Network Error') || err.message?.includes('timeout')) {
+          console.error('Backend server is not accessible:', err.message);
+          setLoading(false);
+          logout();
+          return;
+        }
+        // If it's 401/403, token is invalid, try patient or logout
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          // Token invalid for doctor, try patient
+        } else {
+          // Other error, stop trying
+          console.error('Error verifying doctor token:', err.message);
           setLoading(false);
           logout();
           return;
         }
       }
 
+      // Try patient profile
       try {
-        const response = await axios.get(`${apiUrl}/patients/profile/me`, { timeout: 5000 });
+        const response = await axios.get(`${apiUrl}/patients/profile/me`, { timeout });
         setUser(response.data);
         setUserType('patient');
         setLoading(false);
         return;
       } catch (err: any) {
-        if (err.code === 'ECONNREFUSED' || err.message?.includes('Network Error')) {
-          console.error('Backend server is not running or not accessible');
+        // Any error means token is invalid or server is unreachable
+        if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('Network Error') || err.message?.includes('timeout')) {
+          console.error('Backend server is not accessible:', err.message);
+        } else if (err.response?.status === 401 || err.response?.status === 403) {
+          console.log('Token is invalid or expired');
+        } else {
+          console.error('Error verifying patient token:', err.message);
         }
+        setLoading(false);
         logout();
       }
     } catch (error) {
@@ -87,10 +110,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       verifyToken();
+      
+      // Safety timeout: if loading takes more than 20 seconds, force stop
+      const safetyTimeout = setTimeout(() => {
+        console.warn('Token verification timeout - forcing stop');
+        setLoading(false);
+        logout();
+      }, 20000);
+      
+      return () => clearTimeout(safetyTimeout);
     } else {
       setLoading(false);
     }
-  }, [token, verifyToken]);
+  }, [token, verifyToken, logout]);
 
   const login = (userData: User, type: 'doctor' | 'patient', authToken: string) => {
     setUser(userData);
