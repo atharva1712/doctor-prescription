@@ -21,7 +21,15 @@ if (!fs.existsSync(prescriptionsDir)) {
 }
 
 
-app.use(cors());
+// CORS configuration - allow all origins in production
+const corsOptions = {
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

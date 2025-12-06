@@ -48,6 +48,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyToken = useCallback(async () => {
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    
+    // Log API URL in production to help debug
+    if (process.env.NODE_ENV === 'production') {
+      console.log('API URL:', apiUrl);
+      if (apiUrl.includes('localhost')) {
+        console.error('⚠️ WARNING: API URL is localhost in production!');
+        console.error('⚠️ Set REACT_APP_API_URL in Railway environment variables');
+        setLoading(false);
+        return;
+      }
+    }
+    
     // Increase timeout for mobile networks (20 seconds)
     const timeout = 20000;
     
