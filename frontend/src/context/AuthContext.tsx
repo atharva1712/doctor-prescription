@@ -66,8 +66,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
     
-    // Increase timeout for mobile networks (20 seconds)
-    const timeout = 20000;
+    // Increase timeout for mobile networks (15 seconds)
+    const timeout = 15000;
     
     try {
       try {
@@ -82,9 +82,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (err.response?.status === 401 || err.response?.status === 403) {
           // Continue to try patient endpoint - this is expected if user is a patient
           console.log('Doctor endpoint returned', err.response?.status, '- trying patient endpoint');
-        } else if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('Network Error') || err.message?.includes('timeout')) {
+        } else if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.code === 'ERR_NETWORK' || err.message?.includes('Network Error') || err.message?.includes('timeout') || err.message?.includes('Failed to fetch')) {
           // Network error or timeout - clear loading and logout
-          console.error('Network error or timeout:', err.message);
+          console.error('Network error or timeout on doctor endpoint:', err.message || err.code);
           setLoading(false);
           logout();
           return;
@@ -114,8 +114,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setLoading(false);
           logout();
           return;
-        } else if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('Network Error') || err.message?.includes('timeout')) {
-          console.error('Network error or timeout:', err.message);
+        } else if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.code === 'ERR_NETWORK' || err.message?.includes('Network Error') || err.message?.includes('timeout') || err.message?.includes('Failed to fetch')) {
+          console.error('Network error or timeout on patient endpoint:', err.message || err.code);
           setLoading(false);
           logout();
           return;
@@ -136,31 +136,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Safety timeout - ensure loading never stays true forever
     let safetyTimeout: NodeJS.Timeout;
+    let isMounted = true;
     
     // Check if token exists and is not empty
     if (token && token.trim() !== '') {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      verifyToken();
       
-      // Set safety timeout only when verifying token
+      // Set safety timeout BEFORE calling verifyToken
+      // This ensures loading is cleared even if verifyToken hangs
       safetyTimeout = setTimeout(() => {
-        if (loading) {
-          console.warn('Token verification timeout - clearing loading state');
+        if (isMounted) {
+          console.warn('Token verification timeout (30s) - clearing loading state');
           setLoading(false);
-          logout();
+          // Don't logout on timeout, just clear loading so user can sign in
         }
       }, 30000); // 30 second safety timeout
+      
+      verifyToken().catch((error) => {
+        // Catch any unhandled errors
+        if (isMounted) {
+          console.error('Unhandled error in verifyToken:', error);
+          setLoading(false);
+        }
+      });
     } else {
       // No token - clear loading immediately
       setLoading(false);
     }
 
     return () => {
+      isMounted = false;
       if (safetyTimeout) {
         clearTimeout(safetyTimeout);
       }
     };
-  }, [token, verifyToken, loading, logout]);
+  }, [token, verifyToken]);
 
   const login = (userData: User, type: 'doctor' | 'patient', authToken: string) => {
     setUser(userData);
