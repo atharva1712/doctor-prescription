@@ -253,7 +253,13 @@ PORT=3000
 NODE_ENV=production
 ```
 
-Replace `your-backend-url.up.railway.app` with your actual backend URL.
+**CRITICAL:**
+- Replace `your-backend-url.up.railway.app` with your **actual backend URL** from Step 3.4
+- Variable name MUST be exactly `REACT_APP_API_URL` (React requires `REACT_APP_` prefix)
+- URL must include `https://` and `/api` at the end
+- Get backend URL from: Backend service → Settings → Domain
+
+**If you get `ERR_NAME_NOT_RESOLVED` error, see `RAILWAY_FRONTEND_FIX.md`**
 
 ### 5.4 Deploy Frontend
 
