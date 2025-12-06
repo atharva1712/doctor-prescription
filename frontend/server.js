@@ -23,9 +23,16 @@ if (fs.existsSync(path.join(BUILD_PATH, 'static'))) {
 }
 
 // Serve static files from the React app build directory
-// This will serve files from build/static/js, build/static/css, etc.
+// This MUST be before the catch-all route
 // express.static will serve files if they exist, otherwise call next()
 app.use(express.static(BUILD_PATH, {
+  maxAge: '1y',
+  etag: false,
+  index: false // Don't serve index.html for directories
+}));
+
+// Explicitly handle static file requests that might have been missed
+app.use('/static', express.static(path.join(BUILD_PATH, 'static'), {
   maxAge: '1y',
   etag: false
 }));
@@ -38,9 +45,10 @@ app.get('*', (req, res) => {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
   
-  // If it's a request for a static file that wasn't served by express.static,
-  // it means the file doesn't exist - return 404
+  // If it's a request for a static file extension, it should have been handled above
+  // If we reach here, the file doesn't exist
   if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$/)) {
+    console.log(`404 - Static file not found: ${req.path}`);
     return res.status(404).send('File not found');
   }
   

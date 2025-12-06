@@ -2,7 +2,6 @@
   "name": "prescription-platform-frontend",
   "version": "1.0.0",
   "description": "Frontend for Online Prescription Platform",
-  "homepage": ".",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
