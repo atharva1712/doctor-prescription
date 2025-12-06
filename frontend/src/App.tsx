@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -28,6 +28,18 @@ const theme = createTheme({
 });
 
 function App(): JSX.Element {
+  // Show API URL in console for debugging
+  useEffect(() => {
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    console.log('App loaded. API URL:', apiUrl);
+    console.log('Environment:', process.env.NODE_ENV);
+    
+    if (process.env.NODE_ENV === 'production' && apiUrl.includes('localhost')) {
+      console.error('❌ CRITICAL: API URL is set to localhost in production!');
+      console.error('❌ The app will not work. Set REACT_APP_API_URL in Railway.');
+    }
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
