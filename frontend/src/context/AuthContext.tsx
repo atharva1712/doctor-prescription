@@ -48,12 +48,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyToken = useCallback(async () => {
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-    
-    // Increase timeout for mobile networks (15 seconds)
-    const timeout = 15000;
+    // Increase timeout for mobile networks (20 seconds)
+    const timeout = 20000;
     
     try {
-      // Try doctor profile first
       try {
         const response = await axios.get(`${apiUrl}/doctors/profile/me`, { timeout });
         setUser(response.data);
@@ -61,26 +59,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setLoading(false);
         return;
       } catch (err: any) {
-        // If it's a network error, stop immediately
-        if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('Network Error') || err.message?.includes('timeout')) {
-          console.error('Backend server is not accessible:', err.message);
-          setLoading(false);
-          logout();
-          return;
-        }
-        // If it's 401/403, token is invalid, try patient or logout
+        // If it's a 401/403, token is invalid - continue to check patient
         if (err.response?.status === 401 || err.response?.status === 403) {
-          // Token invalid for doctor, try patient
-        } else {
-          // Other error, stop trying
-          console.error('Error verifying doctor token:', err.message);
+          // Continue to try patient endpoint
+        } else if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('Network Error') || err.message?.includes('timeout')) {
+          // Network error or timeout - clear loading and logout
+          console.error('Network error or timeout:', err.message);
           setLoading(false);
           logout();
           return;
+        } else {
+          // Other error - continue to try patient endpoint
         }
       }
 
-      // Try patient profile
       try {
         const response = await axios.get(`${apiUrl}/patients/profile/me`, { timeout });
         setUser(response.data);
@@ -88,16 +80,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setLoading(false);
         return;
       } catch (err: any) {
-        // Any error means token is invalid or server is unreachable
-        if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('Network Error') || err.message?.includes('timeout')) {
-          console.error('Backend server is not accessible:', err.message);
-        } else if (err.response?.status === 401 || err.response?.status === 403) {
-          console.log('Token is invalid or expired');
+        // If 401/403, token is invalid - logout
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          setLoading(false);
+          logout();
+          return;
+        } else if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('Network Error') || err.message?.includes('timeout')) {
+          console.error('Network error or timeout:', err.message);
+          setLoading(false);
+          logout();
+          return;
         } else {
-          console.error('Error verifying patient token:', err.message);
+          // Other error - logout anyway
+          setLoading(false);
+          logout();
         }
-        setLoading(false);
-        logout();
       }
     } catch (error) {
       console.error('Token verification failed:', error);
@@ -107,22 +104,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [logout]);
 
   useEffect(() => {
+    // Safety timeout - ensure loading never stays true forever
+    let safetyTimeout: NodeJS.Timeout;
+    
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       verifyToken();
       
-      // Safety timeout: if loading takes more than 20 seconds, force stop
-      const safetyTimeout = setTimeout(() => {
-        console.warn('Token verification timeout - forcing stop');
+      // Set safety timeout only when verifying token
+      safetyTimeout = setTimeout(() => {
         setLoading(false);
-        logout();
-      }, 20000);
-      
-      return () => clearTimeout(safetyTimeout);
+        console.warn('Token verification timeout - clearing loading state');
+      }, 30000); // 30 second safety timeout
     } else {
       setLoading(false);
     }
-  }, [token, verifyToken, logout]);
+
+    return () => {
+      if (safetyTimeout) {
+        clearTimeout(safetyTimeout);
+      }
+    };
+  }, [token, verifyToken]);
 
   const login = (userData: User, type: 'doctor' | 'patient', authToken: string) => {
     setUser(userData);
