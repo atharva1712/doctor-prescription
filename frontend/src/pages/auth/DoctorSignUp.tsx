@@ -48,6 +48,11 @@ const DoctorSignUp: React.FC = () => {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.name === 'profilePicture' && e.target.files) {
       setFormData({ ...formData, profilePicture: e.target.files[0] });
+    } else if (e.target.name === 'phone') {
+      const value = e.target.value.replace(/\D/g, '');
+      if (value.length <= 10) {
+        setFormData({ ...formData, phone: value });
+      }
     } else {
       setFormData({ ...formData, [e.target.name]: e.target.value });
     }
@@ -57,6 +62,12 @@ const DoctorSignUp: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    if (formData.phone.length !== 10) {
+      setError('Phone number must be exactly 10 digits');
+      setLoading(false);
+      return;
+    }
 
     try {
       const data = new FormData();
@@ -143,6 +154,9 @@ const DoctorSignUp: React.FC = () => {
               onChange={handleChange}
               required
               margin="normal"
+              inputProps={{ maxLength: 10 }}
+              helperText="Must be exactly 10 digits"
+              error={formData.phone.length > 0 && formData.phone.length !== 10}
             />
             <TextField
               fullWidth

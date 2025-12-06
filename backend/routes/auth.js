@@ -27,7 +27,10 @@ router.post('/doctor/signup', upload.single('profilePicture'), [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('phone').notEmpty().withMessage('Phone number is required'),
+  body('phone')
+    .notEmpty().withMessage('Phone number is required')
+    .isLength({ min: 10, max: 10 }).withMessage('Phone number must be exactly 10 digits')
+    .matches(/^\d+$/).withMessage('Phone number must contain only digits'),
   body('specialty').trim().notEmpty().withMessage('Specialty is required'),
   body('yearsOfExperience').isFloat({ min: 0 }).withMessage('Years of experience must be a valid number')
 ], async (req, res) => {
@@ -120,7 +123,10 @@ router.post('/patient/signup', upload.single('profilePicture'), [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('phone').notEmpty().withMessage('Phone number is required'),
+  body('phone')
+    .notEmpty().withMessage('Phone number is required')
+    .isLength({ min: 10, max: 10 }).withMessage('Phone number must be exactly 10 digits')
+    .matches(/^\d+$/).withMessage('Phone number must contain only digits'),
   body('age').isInt({ min: 0 }).withMessage('Age must be a valid number')
 ], async (req, res) => {
   try {

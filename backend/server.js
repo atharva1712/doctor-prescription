@@ -20,21 +20,21 @@ if (!fs.existsSync(prescriptionsDir)) {
   fs.mkdirSync(prescriptionsDir, { recursive: true });
 }
 
-// Middleware
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/prescriptions', express.static(path.join(__dirname, 'uploads/prescriptions')));
 
-// Routes
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/doctors', require('./routes/doctors'));
 app.use('/api/patients', require('./routes/patients'));
 app.use('/api/consultations', require('./routes/consultations'));
 app.use('/api/prescriptions', require('./routes/prescriptions'));
 
-// Error handling middleware
+
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ 
@@ -43,7 +43,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// MongoDB Connection
+
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/prescription_platform';
 mongoose.connect(mongoURI, {
   useNewUrlParser: true,
